@@ -1,87 +1,90 @@
-// const Joi = require('joi');
+// Import the Express module
 const express = require('express');
 const app = express();
+
+// Middleware to parse JSON bodies
 app.use(express.json());
 
+// In-memory users data (simulating a database)
+const users = [
+  { id: 1, name: "Alice", age: 12 },
+  { id: 2, name: "John", age: 12 },
+  { id: 3, name: "Robert", age: 12 },
+];
 
-const users =
-    [{
-        "id": 1,
-        "name":"Alice",
-        "age": 12
-    },
-    {
-        "id": 2,
-        "name":"Jhon",
-        "age": 12
-    },
-    {
-        "id": 3,
-        "name":"Robert",
-        "age": 12
-    }
-    ]
-
-
-app.get('/',(req, res)=>{
-    res.send('hello world')
+// Route: GET /
+// Purpose: Test endpoint to verify server is running
+app.get('/', (req, res) => {
+  res.send('Hello World');
 });
 
-app.get('/api/users',(req,res)=>{
-   res.send(users) ;
+// Route: GET /api/users
+// Purpose: Get all users
+app.get('/api/users', (req, res) => {
+  res.send(users);
 });
 
-app.get('/api/users/:id',(req,res)=>{
-    const user = users.find( item => item.id === parseInt( req.params.id));
-    if (!user)res.status(404).send("id invalid");
-
-    res.send(user);
-});
-// app.get('/api/posts/:month/:year',(req,res)=>{
-//     res.send(req.params  );
-// })
-
-app.post('/api/users', (req,res)=>{
-    // const schema = {
-    //     name: Joi.string().min().required()
-    // };
-    // const result = Joi.validate(req.body,schema);
-    // if (result.error){
-    //     res.status(400).send(result.error.details[0].message)
-    //     return;
-    // }
-    if (!req.body.name || req.body.name.length <3){
-        res.status(400).send('name is required must')
-        return;
-    }
-    const user ={
-        id: users.length = + 1,
-        name: req.body.name,
-        age: req.body.age
-    };
-    users.push(user);
-    console.log(users)
-    res.send(user);
+// Route: GET /api/users/:id
+// Purpose: Get a single user by ID
+app.get('/api/users/:id', (req, res) => {
+  const user = users.find(u => u.id === parseInt(req.params.id));
+  if (!user) return res.status(404).send('User with the given ID not found.');
+  res.send(user);
 });
 
-app.put('/api/users/:id', ()=>{
-    //Look up the course 
-    //If not existing , return 404
+// Route: POST /api/users
+// Purpose: Create a new user
+app.post('/api/users', (req, res) => {
+  const { name, age } = req.body;
 
-    //validate 
-    //If invalid , return 400 - Bad request
-    //Return the update course
+  // Basic validation
+  if (!name || name.length < 3) {
+    return res.status(400).send('Name is required and should be at least 3 characters.');
+  }
 
-    const user = users.find( item => item.id === parseInt( req.params.id));
-    if (!user)res.status(404).send("id invalid");
-    user.name = req.body.name;
-    res.send(user);
+  // Generate new user ID
+  const user = {
+    id: users.length > 0 ? users[users.length - 1].id + 1 : 1,
+    name,
+    age: age || null, // default null if age not provided
+  };
 
-
-})
-
-const port = process.env.PORT ||3000;
-app.listen(port,()=>{
-    console.log(`Listening on port ${port}...`);
+  users.push(user);
+  res.send(user);
 });
 
+// Route: PUT /api/users/:id
+// Purpose: Update an existing user
+app.put('/api/users/:id', (req, res) => {
+  const user = users.find(u => u.id === parseInt(req.params.id));
+  if (!user) return res.status(404).send('User with the given ID not found.');
+
+  const { name, age } = req.body;
+
+  // Basic validation
+  if (!name || name.length < 3) {
+    return res.status(400).send('Name is required and should be at least 3 characters.');
+  }
+
+  // Update user data
+  user.name = name;
+  if (age !== undefined) user.age = age;
+
+  res.send(user);
+});
+
+// Route: DELETE /api/users/:id
+// Purpose: Delete a user by ID
+app.delete('/api/users/:id', (req, res) => {
+  const userIndex = users.findIndex(u => u.id === parseInt(req.params.id));
+  if (userIndex === -1) return res.status(404).send('User with the given ID not found.');
+
+  const deletedUser = users.splice(userIndex, 1)[0]; // Remove user from array
+  res.send(deletedUser);
+});
+
+// Set port
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server running on port ${port}...`);
+});
